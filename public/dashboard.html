@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZASS Tracker - Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>ZASS Tracker</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="devices">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>My Devices</span>
+                </a>
+                <a href="#" class="nav-item" data-page="history">
+                    <i class="fas fa-history"></i>
+                    <span>Location History</span>
+                </a>
+                <a href="#" class="nav-item" data-page="remote">
+                    <i class="fas fa-gamepad"></i>
+                    <span>Remote Control</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <p id="pageSubtitle">Welcome back, <span id="usernameDisplay"></span></p>
+                </div>
+                <div class="top-bar-actions">
+                    <div class="device-selector">
+                        <select id="deviceSelect">
+                            <option value="">Select Device</option>
+                        </select>
+                    </div>
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="pageContent">
+                <!-- Dashboard Page -->
+                <div id="dashboardPage" class="page active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-mobile-alt"></i></div>
+                            <div class="stat-info">
+                                <h3 id="deviceCount">0</h3>
+                                <p>Active Devices</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-map-pin"></i></div>
+                            <div class="stat-info">
+                                <h3 id="locationCount">0</h3>
+                                <p>Total Locations</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todayCount">0</h3>
+                                <p>Today's Updates</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-battery-full"></i></div>
+                            <div class="stat-info">
+                                <h3 id="batteryStatus">--</h3>
+                                <p>Battery</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="map-container">
+                        <div id="map"></div>
+                    </div>
+                    
+                    <div class="recent-locations">
+                        <h3><i class="fas fa-history"></i> Recent Locations</h3>
+                        <div class="locations-list" id="recentLocationsList">
+                            <p class="empty">No locations yet</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Devices Page -->
+                <div id="devicesPage" class="page">
+                    <div class="page-header">
+                        <h2>My Devices</h2>
+                        <button id="addDeviceBtn" class="btn-primary">
+                            <i class="fas fa-plus"></i> Add Device
+                        </button>
+                    </div>
+                    <div class="devices-grid" id="devicesList">
+                        <p class="empty">No devices registered</p>
+                    </div>
+                </div>
+                
+                <!-- History Page -->
+                <div id="historyPage" class="page">
+                    <div class="page-header">
+                        <h2>Location History</h2>
+                        <div class="filter-controls">
+                            <input type="date" id="historyFrom">
+                            <input type="date" id="historyTo">
+                            <button id="filterHistoryBtn" class="btn-secondary">Filter</button>
+                            <button id="exportHistoryBtn" class="btn-secondary">Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="history-table-container">
+                        <table class="history-table" id="historyTable">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Latitude</th>
+                                    <th>Longitude</th>
+                                    <th>Accuracy</th>
+                                    <th>Battery</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr><td colspan="5">No history data</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Remote Control Page -->
+                <div id="remotePage" class="page">
+                    <div class="page-header">
+                        <h2>Remote Control</h2>
+                        <p>Send commands to your device</p>
+                    </div>
+                    <div class="remote-buttons-grid">
+                        <button class="remote-btn" data-command="get_location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Get Location</span>
+                        </button>
+                        <button class="remote-btn" data-command="lock">
+                            <i class="fas fa-lock"></i>
+                            <span>Lock Phone</span>
+                        </button>
+                        <button class="remote-btn" data-command="unlock">
+                            <i class="fas fa-unlock"></i>
+                            <span>Unlock Phone</span>
+                        </button>
+                        <button class="remote-btn" data-command="alarm">
+                            <i class="fas fa-bell"></i>
+                            <span>Play Alarm</span>
+                        </button>
+                        <button class="remote-btn" data-command="take_photo">
+                            <i class="fas fa-camera"></i>
+                            <span>Take Photo</span>
+                        </button>
+                        <button class="remote-btn danger" data-command="wipe">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>Wipe Data</span>
+                        </button>
+                    </div>
+                    <div class="command-history" id="commandHistory">
+                        <h3>Command History</h3>
+                        <div id="commandList"></div>
+                    </div>
+                </div>
+                
+                <!-- Settings Page -->
+                <div id="settingsPage" class="page">
+                    <div class="page-header">
+                        <h2>Settings</h2>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Change Password</h3>
+                        <form id="changePasswordForm">
+                            <input type="password" id="oldPassword" placeholder="Old Password" required>
+                            <input type="password" id="newPassword" placeholder="New Password" required>
+                            <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                            <button type="submit" class="btn-primary">Update Password</button>
+                        </form>
+                    </div>
+                    <div class="settings-section">
+                        <h3>System Info</h3>
+                        <div class="info-box" id="systemInfo"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
