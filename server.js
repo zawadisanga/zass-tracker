@@ -421,3 +421,46 @@ server.listen(PORT, '0.0.0.0', () => {
 ╚══════════════════════════════════════════════════════════╝
   `);
 });
+
+
+
+// ============ REGISTER ENDPOINT (NEW) ============
+app.post('/api/register', async (req, res) => {
+  const { username, password, email } = req.body;
+  
+  // Check if user exists
+  const existingUser = data.users.find(u => u.username === username);
+  if (existingUser) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Username already exists' 
+    });
+  }
+  
+  // Create new user
+  const newUser = {
+    id: uuidv4(),
+    username: username,
+    password: bcrypt.hashSync(password, 10),
+    email: email || '',
+    role: 'user',
+    createdAt: new Date().toISOString()
+  };
+  
+  data.users.push(newUser);
+  saveData();
+  
+  // Create token
+  const token = jwt.sign(
+    { userId: newUser.id, username: newUser.username, role: newUser.role },
+    process.env.JWT_SECRET || 'zass-secret-key-2024',
+    { expiresIn: '7d' }
+  );
+  
+  res.json({
+    success: true,
+    token: token,
+    user: { id: newUser.id, username: newUser.username, role: newUser.role },
+    message: 'Registration successful!'
+  });
+});
